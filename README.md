@@ -32,6 +32,11 @@ Si votre base existe déjà, exécutez la migration pour les tables/colonnes add
 
 ```bash
 psql -U postgres -d gestion_grossiste -f database/migrations/001_add_actif_and_parametres.sql
+psql -U postgres -d gestion_grossiste -f database/migrations/002_add_unite_vente.sql
+psql -U postgres -d gestion_grossiste -f database/migrations/003_add_features.sql
+psql -U postgres -d gestion_grossiste -f database/migrations/004_reset_token_columns.sql
+psql -U postgres -d gestion_grossiste -f database/migrations/005_prix_carton_sac_decaissement.sql
+psql -U postgres -d gestion_grossiste -f database/migrations/006_conversion_stock_cout.sql
 ```
 
 Pour une nouvelle installation complète :
@@ -86,8 +91,12 @@ Chaque Boss possède ses données de façon totalement indépendante. Les employ
 | GET | `/api/dashboard/boss` | Stats globales Boss |
 | GET | `/api/grossistes` | Liste des grossistes |
 | GET | `/api/employes` | Liste des employés |
-| GET | `/api/produits` | Produits du grossiste actif |
+| GET | `/api/produits` | Produits du grossiste actif (filtres: `q`, `categorie_id`) |
+| GET | `/api/categories` | Catégories du grossiste |
+| GET | `/api/decaissements` | Décaissements Boss |
 | POST | `/api/ventes` | Créer une vente (panier) |
+| POST | `/api/auth/forgot-password` | Mot de passe oublié |
+| POST | `/api/auth/reset-password` | Réinitialiser le mot de passe |
 
 ## Prochaines étapes
 

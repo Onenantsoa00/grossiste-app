@@ -13,6 +13,8 @@ CREATE TABLE bosses (
     email VARCHAR(150) UNIQUE NOT NULL,
     telephone VARCHAR(30),
     password TEXT NOT NULL,
+    reset_token TEXT,
+    reset_token_expiry TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -153,11 +155,18 @@ CREATE TABLE produits (
     prix_achat NUMERIC(12,2) DEFAULT 0,
     prix_vente NUMERIC(12,2) DEFAULT 0,
     prix_grossiste NUMERIC(12,2) DEFAULT 0,
+    prix_carton NUMERIC(12,2) DEFAULT 0,
+    prix_sac NUMERIC(12,2) DEFAULT 0,
+    qte_par_carton NUMERIC(12,3) DEFAULT 0,
+    qte_par_sac NUMERIC(12,3) DEFAULT 0,
 
-    stock INTEGER DEFAULT 0,
-    stock_min INTEGER DEFAULT 0,
+    unite_vente VARCHAR(10) DEFAULT 'piece',
+
+    stock NUMERIC(12,3) DEFAULT 0,
+    stock_min NUMERIC(12,3) DEFAULT 0,
 
     image TEXT,
+    date_peremption DATE,
 
     CONSTRAINT fk_produit_grossiste
         FOREIGN KEY (grossiste_id)
@@ -189,8 +198,9 @@ CREATE TABLE mouvements_stock (
     grossiste_id UUID NOT NULL,
     produit_id UUID NOT NULL,
     type VARCHAR(20) NOT NULL,
-    quantite INTEGER NOT NULL,
+    quantite NUMERIC(12,3) NOT NULL,
     motif TEXT,
+    cout_achat NUMERIC(12,2) DEFAULT 0,
     utilisateur_id UUID,
     date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -219,6 +229,7 @@ CREATE TABLE ventes (
     utilisateur_id UUID,
 
     numero VARCHAR(50) UNIQUE NOT NULL,
+    recu VARCHAR(50) UNIQUE,
 
     montant NUMERIC(12,2) DEFAULT 0,
     remise NUMERIC(12,2) DEFAULT 0,
@@ -253,8 +264,9 @@ CREATE TABLE lignes_vente (
     produit_id UUID NOT NULL,
 
     prix NUMERIC(12,2) NOT NULL,
-    quantite INTEGER NOT NULL,
+    quantite NUMERIC(12,3) NOT NULL,
     total NUMERIC(12,2) NOT NULL,
+    type_prix VARCHAR(20) DEFAULT 'unitaire',
 
     CONSTRAINT fk_lv_vente
         FOREIGN KEY (vente_id)
@@ -323,6 +335,34 @@ CREATE TABLE parametres_entreprise (
         FOREIGN KEY (boss_id)
         REFERENCES bosses(id)
         ON DELETE CASCADE
+);
+
+-- ============================================
+-- RESET MOT DE PASSE
+-- ============================================
+
+-- ============================================
+-- DECAISSEMENTS BOSS
+-- ============================================
+
+CREATE TABLE decaissements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    boss_id UUID NOT NULL,
+    grossiste_id UUID NOT NULL,
+    montant NUMERIC(12,2) NOT NULL CHECK (montant > 0),
+    motif TEXT,
+    date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_decaissement_boss
+        FOREIGN KEY (boss_id)
+        REFERENCES bosses(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_decaissement_grossiste
+        FOREIGN KEY (grossiste_id)
+        REFERENCES grossistes(id)
+        ON DELETE SET NULL
 );
 
 -- ============================================

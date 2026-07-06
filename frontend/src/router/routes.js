@@ -21,6 +21,11 @@ const routes = [
         path: 'forgot-password',
         component: () => import('pages/ForgotPasswordPage.vue'),
         meta: { guest: true }
+      },
+      {
+        path: 'reset-password',
+        component: () => import('pages/ResetPasswordPage.vue'),
+        meta: { guest: true }
       }
     ]
   },
@@ -43,6 +48,11 @@ const routes = [
         path: 'employes',
         name: 'boss-employes',
         component: () => import('pages/boss/EmployesPage.vue')
+      },
+      {
+        path: 'decaissements',
+        name: 'boss-decaissements',
+        component: () => import('pages/boss/DecaissementsPage.vue')
       }
     ]
   },

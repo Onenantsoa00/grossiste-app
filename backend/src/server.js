@@ -14,6 +14,8 @@ import clientRoutes from './routes/clients.js'
 import fournisseurRoutes from './routes/fournisseurs.js'
 import stockRoutes from './routes/stock.js'
 import venteRoutes from './routes/ventes.js'
+import categorieRoutes from './routes/categories.js'
+import decaissementRoutes from './routes/decaissements.js'
 
 dotenv.config()
 
@@ -42,6 +44,8 @@ app.use('/api/clients', clientRoutes)
 app.use('/api/fournisseurs', fournisseurRoutes)
 app.use('/api/stock', stockRoutes)
 app.use('/api/ventes', venteRoutes)
+app.use('/api/categories', categorieRoutes)
+app.use('/api/decaissements', decaissementRoutes)
 
 app.use(errorHandler)
 

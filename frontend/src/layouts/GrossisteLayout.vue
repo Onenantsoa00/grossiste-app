@@ -2,12 +2,12 @@
   <q-layout view="lHh Lpr lFf">
     <q-header elevated class="bg-indigo-8">
       <q-toolbar>
-        <q-btn v-if="auth.isBoss" flat icon="arrow_back" label="Retour Boss" @click="goBackBoss" />
+        <q-btn v-if="auth.isBoss" flat icon="arrow_back" :label="$q.screen.gt.xs ? 'Retour Boss' : undefined" @click="goBackBoss" />
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
         <q-toolbar-title>
           {{ auth.activeGrossiste?.nom || 'Grossiste' }}
         </q-toolbar-title>
-        <q-btn flat icon="logout" label="Déconnexion" @click="onLogout" />
+        <q-btn flat icon="logout" :label="$q.screen.gt.xs ? 'Déconnexion' : undefined" @click="onLogout" />
       </q-toolbar>
     </q-header>
 

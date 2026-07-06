@@ -2,11 +2,12 @@
   <q-layout view="lHh Lpr lFf">
     <q-header elevated class="bg-teal-8">
       <q-toolbar>
+        <q-btn flat dense round icon="menu" aria-label="Menu" @click="leftDrawerOpen = !leftDrawerOpen" />
         <q-toolbar-title>
           {{ auth.user?.grossiste_nom || 'Mon grossiste' }}
         </q-toolbar-title>
-        <q-btn flat :label="userLabel" icon="account_circle" />
-        <q-btn flat icon="logout" label="Déconnexion" @click="onLogout" />
+        <q-btn flat :label="$q.screen.gt.xs ? userLabel : undefined" icon="account_circle" />
+        <q-btn flat icon="logout" :label="$q.screen.gt.xs ? 'Déconnexion' : undefined" @click="onLogout" />
       </q-toolbar>
     </q-header>
 

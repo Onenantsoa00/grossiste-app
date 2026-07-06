@@ -14,3 +14,47 @@ body {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
   }
 }
+
+.auth-card {
+  width: 400px;
+  max-width: 95vw;
+}
+
+.dialog-card {
+  width: 100%;
+  max-width: 560px;
+}
+
+.page-responsive {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.full-width-sm {
+  @media (max-width: 599px) {
+    width: 100%;
+  }
+}
+
+// Tables scrollables sur petit écran
+.q-table__container {
+  @media (max-width: 599px) {
+    overflow-x: auto;
+  }
+}
+
+// Toolbar compact sur mobile
+.q-toolbar {
+  @media (max-width: 599px) {
+    min-height: 50px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+// Dialogues pleine largeur sur mobile
+@media (max-width: 599px) {
+  .q-dialog__inner--minimized > div {
+    max-width: 100% !important;
+  }
+}

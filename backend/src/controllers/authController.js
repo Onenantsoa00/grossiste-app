@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt'
 import crypto from 'crypto'
 import pool from '../config/db.js'
 import { signToken } from '../utils/jwt.js'
+import { sendPasswordResetEmail, buildResetUrl } from '../utils/email.js'
 
 const SALT_ROUNDS = 10
 
@@ -172,31 +173,43 @@ export async function forgotPassword (req, res, next) {
     const token = crypto.randomBytes(32).toString('hex')
     const expiresAt = new Date(Date.now() + 3600000)
 
-    let userType = null
     const bossCheck = await pool.query('SELECT id FROM bosses WHERE email = $1', [normalizedEmail])
-    if (bossCheck.rows.length) userType = 'boss'
-    else {
-      const employeCheck = await pool.query('SELECT id FROM employes WHERE email = $1', [normalizedEmail])
-      if (employeCheck.rows.length) userType = 'employe'
+    const employeCheck = await pool.query('SELECT id FROM employes WHERE email = $1', [normalizedEmail])
+
+    if (bossCheck.rows.length) {
+      await pool.query(
+        `UPDATE bosses
+         SET reset_token = $1, reset_token_expiry = $2, updated_at = NOW()
+         WHERE email = $3`,
+        [token, expiresAt, normalizedEmail]
+      )
+    } else if (employeCheck.rows.length) {
+      await pool.query(
+        `UPDATE employes
+         SET reset_token = $1, reset_token_expiry = $2, updated_at = NOW()
+         WHERE email = $3`,
+        [token, expiresAt, normalizedEmail]
+      )
     }
 
-    if (userType) {
-      await pool.query('DELETE FROM password_resets WHERE email = $1', [normalizedEmail])
-      await pool.query(
-        `INSERT INTO password_resets (email, token, user_type, expires_at)
-         VALUES ($1, $2, $3, $4)`,
-        [normalizedEmail, token, userType, expiresAt]
-      )
-      // En production : envoyer l'email avec le lien de réinitialisation
-      if (process.env.NODE_ENV === 'development') {
-        return res.json({
-          message: 'Si cet email existe, un lien de réinitialisation a été envoyé',
-          dev_token: token
-        })
+    // Réponse identique dans tous les cas (ne pas révéler si l'email existe)
+    const payload = {
+      message: 'Si cet email existe, un lien de réinitialisation a été envoyé'
+    }
+
+    if (bossCheck.rows.length || employeCheck.rows.length) {
+      const resetUrl = buildResetUrl(token)
+      const emailSent = await sendPasswordResetEmail(normalizedEmail, resetUrl)
+
+      if (!emailSent) {
+        payload.reset_url = resetUrl
+        if (process.env.NODE_ENV === 'development') {
+          payload.dev_token = token
+        }
       }
     }
 
-    res.json({ message: 'Si cet email existe, un lien de réinitialisation a été envoyé' })
+    res.json(payload)
   } catch (err) {
     next(err)
   }
@@ -209,24 +222,45 @@ export async function resetPassword (req, res, next) {
       return res.status(400).json({ message: 'Token et nouveau mot de passe requis' })
     }
 
-    const { rows } = await pool.query(
-      `SELECT * FROM password_resets
-       WHERE token = $1 AND expires_at > NOW()`,
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Le mot de passe doit contenir au moins 6 caractères' })
+    }
+
+    const hash = await bcrypt.hash(password, SALT_ROUNDS)
+
+    const bossResult = await pool.query(
+      `SELECT id FROM bosses
+       WHERE reset_token = $1 AND reset_token_expiry > NOW()`,
       [token]
     )
 
-    if (!rows.length) {
-      return res.status(400).json({ message: 'Token invalide ou expiré' })
+    if (bossResult.rows.length) {
+      await pool.query(
+        `UPDATE bosses
+         SET password = $1, reset_token = NULL, reset_token_expiry = NULL, updated_at = NOW()
+         WHERE id = $2`,
+        [hash, bossResult.rows[0].id]
+      )
+      return res.json({ message: 'Mot de passe réinitialisé avec succès' })
     }
 
-    const reset = rows[0]
-    const hash = await bcrypt.hash(password, SALT_ROUNDS)
-    const table = reset.user_type === 'boss' ? 'bosses' : 'employes'
+    const employeResult = await pool.query(
+      `SELECT id FROM employes
+       WHERE reset_token = $1 AND reset_token_expiry > NOW()`,
+      [token]
+    )
 
-    await pool.query(`UPDATE ${table} SET password = $1, updated_at = NOW() WHERE email = $2`, [hash, reset.email])
-    await pool.query('DELETE FROM password_resets WHERE email = $1', [reset.email])
+    if (employeResult.rows.length) {
+      await pool.query(
+        `UPDATE employes
+         SET password = $1, reset_token = NULL, reset_token_expiry = NULL, updated_at = NOW()
+         WHERE id = $2`,
+        [hash, employeResult.rows[0].id]
+      )
+      return res.json({ message: 'Mot de passe réinitialisé avec succès' })
+    }
 
-    res.json({ message: 'Mot de passe réinitialisé avec succès' })
+    return res.status(400).json({ message: 'Token invalide ou expiré' })
   } catch (err) {
     next(err)
   }

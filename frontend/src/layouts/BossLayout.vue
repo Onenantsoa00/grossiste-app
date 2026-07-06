@@ -5,7 +5,7 @@
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
         <q-toolbar-title>Gestion Grossiste — Boss</q-toolbar-title>
         <q-btn flat :label="userLabel" icon="account_circle" />
-        <q-btn flat icon="logout" label="Déconnexion" @click="onLogout" />
+        <q-btn flat icon="logout" :label="$q.screen.gt.xs ? 'Déconnexion' : undefined" @click="onLogout" />
       </q-toolbar>
     </q-header>
 
@@ -23,6 +23,10 @@
         <q-item clickable v-ripple to="/boss/employes">
           <q-item-section avatar><q-icon name="people" /></q-item-section>
           <q-item-section>Employés</q-item-section>
+        </q-item>
+        <q-item clickable v-ripple to="/boss/decaissements">
+          <q-item-section avatar><q-icon name="payments" /></q-item-section>
+          <q-item-section>Décaissements</q-item-section>
         </q-item>
       </q-list>
     </q-drawer>
