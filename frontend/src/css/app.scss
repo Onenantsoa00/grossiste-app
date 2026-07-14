@@ -1,23 +1,107 @@
+:root {
+  --color-primary: #2563eb;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-text: #0f172a;
+  --color-text-secondary: #64748b;
+  --radius: 18px;
+  --shadow-soft: 0 22px 48px rgba(15, 23, 42, 0.08);
+}
+
+html,
+body,
+#q-app {
+  min-height: 100%;
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
 body {
-  font-family: 'Roboto', sans-serif;
+  font-family: "Inter", "Roboto", sans-serif;
+  background: var(--color-background);
 }
 
-.stat-card {
-  border-radius: 12px;
+.q-layout {
+  background: var(--color-background);
 }
 
-.grossiste-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.q-page {
+  background: transparent;
+}
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-  }
+.auth-page {
+  min-height: 100vh;
+  width: 100%;
+  background: transparent;
+}
+
+.app-header {
+  background: var(--color-surface) !important;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.04);
+}
+
+.app-header .q-toolbar {
+  min-height: 72px;
+  gap: 12px;
+}
+
+.app-drawer {
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+}
+
+.app-drawer .q-list {
+  padding: 16px 0;
+}
+
+.app-drawer .q-item {
+  border-radius: 14px;
+  margin: 4px 12px;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.app-drawer .q-item:hover {
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.app-drawer .q-item.q-item--active {
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.app-drawer .q-item__section--avatar {
+  color: var(--color-primary);
+}
+
+.q-page-container {
+  padding: 24px;
+}
+
+.q-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  color: var(--color-text);
+}
+
+.q-card .text-h5,
+.q-card .text-h6,
+.q-card .text-subtitle1 {
+  color: var(--color-text);
 }
 
 .auth-card {
-  width: 400px;
+  width: 440px;
   max-width: 95vw;
+  border: 1px solid rgba(37, 99, 235, 0.12);
 }
 
 .dialog-card {
@@ -25,8 +109,25 @@ body {
   max-width: 560px;
 }
 
+.stat-card {
+  border-radius: 22px;
+  border: 1px solid rgba(14, 165, 233, 0.12);
+  background: #fff;
+}
+
+.grossiste-card {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.grossiste-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
 .page-responsive {
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
 }
 
@@ -46,7 +147,7 @@ body {
 // Toolbar compact sur mobile
 .q-toolbar {
   @media (max-width: 599px) {
-    min-height: 50px;
+    min-height: 56px;
     padding-left: 8px;
     padding-right: 8px;
   }
@@ -56,5 +157,38 @@ body {
 @media (max-width: 599px) {
   .q-dialog__inner--minimized > div {
     max-width: 100% !important;
+  }
+}
+
+.text-primary {
+  color: var(--color-primary) !important;
+}
+
+.text-secondary,
+.text-muted {
+  color: var(--color-text-secondary) !important;
+}
+
+.q-btn--unelevated,
+.q-btn--flat {
+  font-weight: 600;
+}
+
+.q-btn[color="primary"] {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.q-btn[color="positive"] {
+  background: var(--color-success);
+}
+
+.q-btn[color="negative"] {
+  background: var(--color-danger);
+}
+
+@media (max-width: 900px) {
+  .q-page-container {
+    padding: 16px;
   }
 }

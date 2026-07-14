@@ -1,6 +1,6 @@
 <template>
-  <q-page class="flex flex-center bg-grey-2">
-    <q-card class="q-pa-lg" style="width: 450px; max-width: 95vw">
+  <q-page class="flex flex-center auth-page">
+    <q-card class="q-pa-lg auth-card" style="width: 450px; max-width: 95vw">
       <q-card-section class="text-center">
         <div class="text-h5 text-primary">Créer un compte Boss</div>
       </q-card-section>

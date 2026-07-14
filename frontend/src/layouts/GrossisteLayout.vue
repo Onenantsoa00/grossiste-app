@@ -1,17 +1,40 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated class="bg-indigo-8">
+    <q-header elevated class="app-header">
       <q-toolbar>
-        <q-btn v-if="auth.isBoss" flat icon="arrow_back" :label="$q.screen.gt.xs ? 'Retour Boss' : undefined" @click="goBackBoss" />
-        <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
+        <q-btn
+          v-if="auth.isBoss"
+          flat
+          icon="arrow_back"
+          :label="$q.screen.gt.xs ? 'Retour Boss' : undefined"
+          @click="goBackBoss"
+        />
+        <q-btn
+          flat
+          dense
+          round
+          icon="menu"
+          aria-label="Menu"
+          @click="toggleLeftDrawer"
+        />
         <q-toolbar-title>
-          {{ auth.activeGrossiste?.nom || 'Grossiste' }}
+          {{ auth.activeGrossiste?.nom || "Grossiste" }}
         </q-toolbar-title>
-        <q-btn flat icon="logout" :label="$q.screen.gt.xs ? 'Déconnexion' : undefined" @click="onLogout" />
+        <q-btn
+          flat
+          icon="logout"
+          :label="$q.screen.gt.xs ? 'Déconnexion' : undefined"
+          @click="onLogout"
+        />
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
+    <q-drawer
+      v-model="leftDrawerOpen"
+      show-if-above
+      bordered
+      class="app-drawer"
+    >
       <q-list>
         <q-item clickable v-ripple to="/grossiste" exact>
           <q-item-section avatar><q-icon name="dashboard" /></q-item-section>
@@ -26,7 +49,9 @@
           <q-item-section>Clients</q-item-section>
         </q-item>
         <q-item clickable v-ripple to="/grossiste/fournisseurs">
-          <q-item-section avatar><q-icon name="local_shipping" /></q-item-section>
+          <q-item-section avatar
+            ><q-icon name="local_shipping"
+          /></q-item-section>
           <q-item-section>Fournisseurs</q-item-section>
         </q-item>
         <q-item clickable v-ripple to="/grossiste/stock">
@@ -34,7 +59,9 @@
           <q-item-section>Stock</q-item-section>
         </q-item>
         <q-item clickable v-ripple to="/grossiste/ventes">
-          <q-item-section avatar><q-icon name="point_of_sale" /></q-item-section>
+          <q-item-section avatar
+            ><q-icon name="point_of_sale"
+          /></q-item-section>
           <q-item-section>Ventes</q-item-section>
         </q-item>
       </q-list>
@@ -47,32 +74,32 @@
 </template>
 
 <script>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from 'stores/auth'
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "stores/auth";
 
 export default {
-  name: 'GrossisteLayout',
-  setup () {
-    const leftDrawerOpen = ref(false)
-    const auth = useAuthStore()
-    const router = useRouter()
+  name: "GrossisteLayout",
+  setup() {
+    const leftDrawerOpen = ref(false);
+    const auth = useAuthStore();
+    const router = useRouter();
 
-    function toggleLeftDrawer () {
-      leftDrawerOpen.value = !leftDrawerOpen.value
+    function toggleLeftDrawer() {
+      leftDrawerOpen.value = !leftDrawerOpen.value;
     }
 
-    function goBackBoss () {
-      auth.leaveGrossiste()
-      router.push('/boss')
+    function goBackBoss() {
+      auth.leaveGrossiste();
+      router.push("/boss");
     }
 
-    function onLogout () {
-      auth.logout()
-      router.push('/login')
+    function onLogout() {
+      auth.logout();
+      router.push("/login");
     }
 
-    return { leftDrawerOpen, toggleLeftDrawer, auth, goBackBoss, onLogout }
-  }
-}
+    return { leftDrawerOpen, toggleLeftDrawer, auth, goBackBoss, onLogout };
+  },
+};
 </script>
