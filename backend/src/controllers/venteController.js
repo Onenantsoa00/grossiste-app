@@ -61,7 +61,7 @@ export async function listVentes(req, res, next) {
     }
 
     const { recu } = req.query;
-    const conditions = ["v.grossiste_id = $1"];
+    const conditions = ["v.grossiste_id = $1", "v.deleted = false"];
     const params = [grossisteId];
 
     if (recu?.trim()) {
@@ -95,7 +95,7 @@ export async function getVente(req, res, next) {
       `SELECT v.*, c.nom AS client_nom, c.telephone AS client_telephone
        FROM ventes v
        LEFT JOIN clients c ON c.id = v.client_id
-       WHERE v.id = $1 AND v.grossiste_id = $2`,
+       WHERE v.id = $1 AND v.grossiste_id = $2 AND v.deleted = false`,
       [req.params.id, grossisteId],
     );
     if (!venteResult.rows.length)
@@ -121,6 +121,87 @@ export async function getVente(req, res, next) {
     });
   } catch (err) {
     next(err);
+  }
+}
+
+export async function exportVentes(req, res, next) {
+  try {
+    const grossisteId = getGrossisteId(req);
+    if (!grossisteId || !(await assertGrossisteAccess(req, grossisteId))) {
+      return res.status(403).json({ message: "Accès refusé" });
+    }
+
+    const ventesResult = await pool.query(
+      `SELECT v.*, c.nom AS client_nom
+       FROM ventes v
+       LEFT JOIN clients c ON c.id = v.client_id
+       WHERE v.grossiste_id = $1 AND v.deleted = false
+       ORDER BY v.date DESC`,
+      [grossisteId],
+    );
+
+    const venteIds = ventesResult.rows.map((v) => v.id);
+    let lignesByVente = {};
+    let paiementsByVente = {};
+
+    if (venteIds.length) {
+      const lignesResult = await pool.query(
+        `SELECT lv.*, p.nom AS produit_nom, p.unite_vente
+         FROM lignes_vente lv
+         JOIN produits p ON p.id = lv.produit_id
+         WHERE lv.vente_id = ANY($1)
+         ORDER BY lv.id`,
+        [venteIds],
+      );
+      lignesByVente = lignesResult.rows.reduce((acc, ligne) => {
+        acc[ligne.vente_id] = acc[ligne.vente_id] || [];
+        acc[ligne.vente_id].push(ligne);
+        return acc;
+      }, {});
+
+      const paiementsResult = await pool.query(
+        `SELECT * FROM paiements WHERE vente_id = ANY($1) ORDER BY date`,
+        [venteIds],
+      );
+      paiementsByVente = paiementsResult.rows.reduce((acc, paiement) => {
+        acc[paiement.vente_id] = acc[paiement.vente_id] || [];
+        acc[paiement.vente_id].push(paiement);
+        return acc;
+      }, {});
+    }
+
+    res.json(
+      ventesResult.rows.map((vente) => ({
+        ...vente,
+        lignes: lignesByVente[vente.id] || [],
+        paiements: paiementsByVente[vente.id] || [],
+      })),
+    );
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteAllVentes(req, res, next) {
+  const client = await pool.connect();
+  try {
+    const grossisteId = getGrossisteId(req);
+    if (!grossisteId || !(await assertGrossisteAccess(req, grossisteId))) {
+      return res.status(403).json({ message: "Accès refusé" });
+    }
+
+    await client.query("BEGIN");
+    await client.query(
+      `UPDATE ventes SET deleted = true WHERE grossiste_id = $1`,
+      [grossisteId],
+    );
+    await client.query("COMMIT");
+    res.json({ message: "Toutes les ventes ont été supprimées" });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    next(err);
+  } finally {
+    client.release();
   }
 }
 
@@ -170,9 +251,14 @@ export async function createVente(req, res, next) {
       }
 
       const VALID_TYPES = ["unitaire", "grossiste", "carton", "sac"];
-      const typePrix = VALID_TYPES.includes(ligne.type_prix) ? ligne.type_prix : "unitaire";
+      const typePrix = VALID_TYPES.includes(ligne.type_prix)
+        ? ligne.type_prix
+        : "unitaire";
 
-      if (typePrix === "carton" && parseFloat(produit.qte_par_carton || 0) <= 0) {
+      if (
+        typePrix === "carton" &&
+        parseFloat(produit.qte_par_carton || 0) <= 0
+      ) {
         return res.status(400).json({
           message: `Ligne ${idx + 1} : définissez la quantité par carton pour « ${produit.nom} »`,
         });
@@ -184,7 +270,11 @@ export async function createVente(req, res, next) {
       }
 
       const prix = parseFloat(ligne.prix);
-      const quantite = parseVenteQuantite(ligne.quantite, typePrix, produit.unite_vente || "piece");
+      const quantite = parseVenteQuantite(
+        ligne.quantite,
+        typePrix,
+        produit.unite_vente || "piece",
+      );
 
       if (!Number.isFinite(prix) || prix < 0 || quantite == null) {
         const msg =
@@ -260,7 +350,14 @@ export async function createVente(req, res, next) {
       await client.query(
         `INSERT INTO lignes_vente (vente_id, produit_id, prix, quantite, total, type_prix)
          VALUES ($1, $2, $3, $4, $5, $6)`,
-        [vente.id, ligne.produit_id, ligne.prix, ligne.quantite, ligneTotal, typePrix],
+        [
+          vente.id,
+          ligne.produit_id,
+          ligne.prix,
+          ligne.quantite,
+          ligneTotal,
+          typePrix,
+        ],
       );
 
       const produitResult = await client.query(

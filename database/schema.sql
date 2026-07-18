@@ -239,6 +239,8 @@ CREATE TABLE ventes (
     paye NUMERIC(12,2) DEFAULT 0,
     reste NUMERIC(12,2) DEFAULT 0,
 
+    deleted BOOLEAN DEFAULT FALSE NOT NULL,
+
     date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_vente_grossiste

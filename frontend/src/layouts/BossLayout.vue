@@ -49,8 +49,18 @@
     </q-drawer>
 
     <q-page-container>
+      <q-banner
+        v-if="auth.subscriptionWarning"
+        dense
+        class="bg-negative text-white"
+      >
+        Votre abonnement est expiré depuis
+        {{ auth.subscriptionDaysLate }} jour(s). Veuillez effectuer votre
+        paiement rapidement.
+      </q-banner>
       <router-view />
     </q-page-container>
+    <subscription-footer />
   </q-layout>
 </template>
 
@@ -58,9 +68,11 @@
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "stores/auth";
+import SubscriptionFooter from "components/SubscriptionFooter.vue";
 
 export default {
   name: "BossLayout",
+  components: { SubscriptionFooter },
   setup() {
     const leftDrawerOpen = ref(false);
     const auth = useAuthStore();
@@ -79,7 +91,7 @@ export default {
       router.push("/login");
     }
 
-    return { leftDrawerOpen, toggleLeftDrawer, userLabel, onLogout };
+    return { auth, leftDrawerOpen, toggleLeftDrawer, userLabel, onLogout };
   },
 };
 </script>

@@ -17,6 +17,28 @@
       </div>
       <div class="col-12 col-sm-auto">
         <q-btn
+          flat
+          color="secondary"
+          icon="download"
+          label="Exporter Excel"
+          class="full-width-sm"
+          @click="exportVentesExcel"
+        />
+      </div>
+      <div class="col-12 col-sm-auto">
+        <q-btn
+          flat
+          color="negative"
+          icon="delete_sweep"
+          label="Supprimer tout"
+          class="full-width-sm"
+          :loading="deletingAll"
+          :disable="deletingAll"
+          @click="confirmDeleteAllVentes"
+        />
+      </div>
+      <div class="col-12 col-sm-auto">
+        <q-btn
           color="primary"
           icon="add_shopping_cart"
           label="Nouvelle vente"
@@ -460,6 +482,7 @@ export default {
     const clientFilter = ref("");
     const filterCategorie = ref(null);
     const searchRecu = ref("");
+    const deletingAll = ref(false);
     const clientId = ref(null);
     const remise = ref(0);
     const tva = ref(0);
@@ -682,6 +705,166 @@ export default {
     function onSearchRecu(value) {
       searchRecu.value = value;
       load(value);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function buildExcelHtml(ventesData) {
+      const rows = [
+        [
+          "Reçu",
+          "N° Vente",
+          "Date",
+          "Client",
+          "Montant",
+          "Remise",
+          "TVA",
+          "Total",
+          "Payé",
+          "Reste",
+          "Produit",
+          "Tarif",
+          "Prix",
+          "Quantité",
+          "Total ligne",
+        ],
+      ];
+      ventesData.forEach((vente) => {
+        const date = new Date(vente.date).toLocaleString("fr-FR");
+        if (vente.lignes && vente.lignes.length) {
+          vente.lignes.forEach((ligne) => {
+            rows.push([
+              vente.recu || vente.numero,
+              vente.numero,
+              date,
+              vente.client_nom || "Sans client",
+              vente.montant ?? "",
+              vente.remise ?? "",
+              vente.tva ?? "",
+              vente.total ?? "",
+              vente.paye ?? "",
+              vente.reste ?? "",
+              ligne.produit_nom || "",
+              labelTypePrix(ligne.type_prix),
+              ligne.prix ?? "",
+              ligne.quantite ?? "",
+              ligne.total ?? "",
+            ]);
+          });
+        } else {
+          rows.push([
+            vente.recu || vente.numero,
+            vente.numero,
+            date,
+            vente.client_nom || "Sans client",
+            vente.montant ?? "",
+            vente.remise ?? "",
+            vente.tva ?? "",
+            vente.total ?? "",
+            vente.paye ?? "",
+            vente.reste ?? "",
+            "",
+            "",
+            "",
+            "",
+            "",
+          ]);
+        }
+      });
+
+      const tableRows = rows
+        .map(
+          (cells) =>
+            `<tr>${cells
+              .map((cell) => `<td>${escapeHtml(cell)}</td>`)
+              .join("")}</tr>`,
+        )
+        .join("");
+
+      return `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+          <head>
+            <meta charset="UTF-8" />
+            <style>td {border: 1px solid #999; padding: 4px;}</style>
+          </head>
+          <body>
+            <table>${tableRows}</table>
+          </body>
+        </html>`;
+    }
+
+    function downloadExcelFile(html, filename) {
+      const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    async function exportVentesExcel() {
+      deletingAll.value = false;
+      try {
+        const { data } = await api.get("/ventes/export");
+        if (!Array.isArray(data) || !data.length) {
+          $q.notify({
+            type: "warning",
+            message: "Aucune vente disponible pour l’export.",
+          });
+          return;
+        }
+        const html = buildExcelHtml(data);
+        downloadExcelFile(html, "ventes-detaillees.xls");
+        $q.notify({
+          type: "positive",
+          message: "Export téléchargé avec succès.",
+        });
+      } catch (err) {
+        $q.notify({
+          type: "negative",
+          message: err.response?.data?.message || "Erreur lors de l’export.",
+        });
+      }
+    }
+
+    async function deleteAllVentes() {
+      deletingAll.value = true;
+      try {
+        await api.delete("/ventes/all");
+        $q.notify({
+          type: "positive",
+          message: "Toutes les ventes ont été supprimées.",
+        });
+        await load();
+      } catch (err) {
+        $q.notify({
+          type: "negative",
+          message:
+            err.response?.data?.message || "Erreur lors de la suppression.",
+        });
+      } finally {
+        deletingAll.value = false;
+      }
+    }
+
+    function confirmDeleteAllVentes() {
+      $q.dialog({
+        title: "Supprimer toutes les ventes",
+        message:
+          "Voulez-vous vraiment supprimer toutes les ventes enregistrées ? Cette action est irréversible.",
+        cancel: true,
+        persistent: true,
+      }).onOk(deleteAllVentes);
     }
 
     async function load(newRecu = null) {
@@ -979,6 +1162,10 @@ export default {
       validerVente,
       showDetails,
       onSearchRecu,
+      exportVentesExcel,
+      deleteAllVentes,
+      confirmDeleteAllVentes,
+      deletingAll,
     };
   },
 };
